@@ -1,0 +1,81 @@
+import os
+import time
+#import shutil
+
+  
+ROOT = r"C:\ROOT"
+BACKUP = r"C:\BACKUP"
+
+
+def tic():
+    return time.time()
+
+
+def timer(function):
+    t0 = tic()
+    results = function()
+    print(f"Elapsed time is {(tic()-t0)} s.")
+    return results
+
+
+def compare_files(origional_file, backup_file):
+    if os.path.isfile(origional_file) and os.path.isfile(backup_file):
+        time_diff = os.path.getmtime(origional_file) - os.path.getmtime(backup_file)
+        if time_diff > 1:
+            print("New Version Available: ", origional_file)
+            return {"Old": [(origional_file, backup_file)]}
+        elif time_diff < - 1:
+            print("Backup is Newer.", origional_file)
+            return {"New": [(backup_file, origional_file)]}
+        else:
+            return {"Same": 1}
+    else:
+        print("Missing File: ", origional_file)
+        return {"Missing": [(origional_file, backup_file)]}
+
+
+def explore_directory(root, backup):
+    results = {"Old": [], "New": [], "Missing": [], "Same": 0}
+    for directory, _, files in os.walk(root):
+        for file_name in files:
+            origional_file = "\\".join([directory, file_name])
+            backup_file = origional_file.replace(root, backup)
+            
+            result = compare_files(origional_file, backup_file)
+            for key, value in result.items():
+                results[key] += value
+            
+    print(f"Python scanned and validated {results['Same']} files.")
+    return results
+
+
+def update_files(results):
+    for key, files in results.items():
+        if key != "Same":
+            print(f"Taking care of {key} files...")
+            for origional_file, backup_file in files:
+                print(f"Copying {origional_file} to {backup_file}.")
+                copy_file(origional_file, backup_file)
+            print(f"{key} files complete.")
+            
+
+def copy_file(source, target):
+    pass
+    #make_path(target)
+    #shutil.copy2(source, target)
+    
+    
+def make_path(target):
+    target_path = "\\".join(target.split("\\")[:-1])
+    if not(os.path.isdir(target_path)):
+        make_path(target_path)
+        os.mkdir(target_path)
+
+
+def main():
+    results = explore_directory(ROOT, BACKUP)
+    update_files(results)
+
+
+if __name__ == "__main__":
+    results = timer(main)
